@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Painel Administrativo de Relatórios de Alagamento</title>
+    <meta name="description" content="Painel administrativo para monitoramento de relatórios de alagamento" />
+    <meta name="author" content="Admin" />
+
+    <meta property="og:title" content="Sistema de Monitoramento de Alagamentos" />
+    <meta property="og:description" content="Painel administrativo para monitoramento de relatórios de alagamento" />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@lovable_dev" />
+    <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+    
+    <style>
+      /* Estilos CSS fornecidos, mantidos */
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      }
+      
+      body {
+        background-color: #f5f5f5;
+        color: #333;
+        line-height: 1.6;
+      }
+      
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 2rem;
+      }
+      
+      header {
+        margin-bottom: 2rem;
+      }
+      
+      h1 {
+        color: #2c3e50;
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+      }
+      
+      p {
+        color: #7f8c8d;
+      }
+      
+      .card {
+        background-color: #fff;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+      }
+      
+      .filters {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+      }
+      
+      @media (min-width: 768px) {
+        .filters {
+          grid-template-columns: repeat(3, 1fr);
+        }
+      }
+      
+      .filter-group {
+        display: flex;
+        flex-direction: column;
+      }
+      
+      label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-size: 0.9rem;
+        font-weight: 500;
+        color: #555;
+      }
+      
+      input[type="text"],
+      input[type="date"] {
+        width: 100%;
+        padding: 0.6rem;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 0.9rem;
+        transition: border-color 0.2s;
+      }
+      
+      input[type="text"]:focus,
+      input[type="date"]:focus {
+        outline: none;
+        border-color: #3498db;
+      }
+      
+      button {
+        background-color: #3498db;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        padding: 0.6rem 1rem;
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: background-color 0.2s;
+        height: 40px;
+        margin-top: auto;
+      }
+      
+      button:hover {
+        background-color: #2980b9;
+      }
+      
+      button.toggle-button {
+        background-color: #3498db;
+      }
+      
+      button.toggle-button.active {
+        background-color: #555;
+      }
+      
+      .street-summary {
+        display: none;
+        margin-bottom: 1.5rem;
+        background-color: #f9f9f9;
+        border-radius: 6px;
+        padding: 1rem;
+      }
+      
+      .street-summary.active {
+        display: block;
+      }
+      
+      .street-summary h2 {
+        font-size: 1.2rem;
+        margin-bottom: 0.8rem;
+        color: #2c3e50;
+      }
+      
+      .street-summary-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 1rem;
+      }
+      
+      .street-summary-item {
+        background-color: #fff;
+        border: 1px solid #eee;
+        border-radius: 4px;
+        padding: 0.8rem;
+      }
+      
+      .street-summary-item .street-name {
+        font-weight: 500;
+      }
+      
+      .street-summary-item .count {
+        color: #7f8c8d;
+        font-size: 0.9rem;
+      }
+      
+      .table-container {
+        overflow-x: auto;
+      }
+      
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: left;
+      }
+      
+      thead {
+        background-color: #f8f9fa;
+      }
+      
+      th, td {
+        padding: 0.8rem;
+        border-bottom: 1px solid #eee;
+      }
+      
+      th {
+        font-weight: 600;
+        color: #555;
+        text-transform: uppercase;
+        font-size: 0.8rem;
+      }
+      
+      tbody tr:hover {
+        background-color: #f8f9fa;
+      }
+      
+      .empty-message {
+        text-align: center;
+        padding: 2rem;
+        color: #7f8c8d;
+      }
+      
+      .table-footer {
+        margin-top: 1rem;
+        font-size: 0.9rem;
+        color: #7f8c8d;
+      }
+      
+      .loading {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 2rem;
+      }
+      
+      .loading-spinner {
+        border: 4px solid rgba(0, 0, 0, 0.1);
+        border-top: 4px solid #3498db;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+      }
+      
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+      
+      .error-message {
+        background-color: #fdeaea;
+        border-left: 4px solid #e74c3c;
+        color: #c0392b;
+        padding: 1rem;
+        margin-bottom: 1rem;
+      }
+      
+      .auth-card {
+        background-color: #fff;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        padding: 2rem;
+        margin-top: 2rem;
+        max-width: 400px;
+        margin-left: auto;
+        margin-right: auto;
+        text-align: center;
+      }
+      .auth-card h2 {
+        color: #2c3e50;
+        margin-bottom: 1.5rem;
+      }
+      .auth-card input {
+        margin-bottom: 1rem;
+      }
+      .auth-card button {
+        width: 100%;
+        margin-top: 1rem;
+      }
+
+      footer {
+        text-align: center;
+        margin-top: 2rem;
+        font-size: 0.9rem;
+        color: #7f8c8d;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <h1>Painel Administrativo de Relatórios de Alagamento</h1>
+        <p>Sistema de monitoramento e análise de ocorrências</p>
+      </header>
+
+      <div id="authSection" class="auth-card">
+        <h2>Login Administrativo</h2>
+        <input type="email" id="adminEmail" placeholder="Email do Administrador" value="admin@example.com">
+        <input type="password" id="adminPassword" placeholder="Senha" value="admin123">
+        <button id="loginButton">Entrar</button>
+        <div id="loginError" class="error-message" style="display: none;">
+          Email ou senha inválidos.
+        </div>
+      </div>
+
+      <div id="dashboardSection" class="card" style="display: none;">
+        <div class="filters">
+          <div class="filter-group">
+            <label for="streetFilter">Filtrar por Rua</label>
+            <input type="text" id="streetFilter" placeholder="Digite o nome da rua">
+          </div>
+          
+          <div class="filter-group">
+            <label for="dateFilter">Filtrar por Data</label>
+            <input type="date" id="dateFilter">
+          </div>
+          
+          <div class="filter-group">
+            <button id="summaryToggle" class="toggle-button">Mostrar Resumo de Ruas</button>
+          </div>
+        </div>
+
+        <div id="streetSummary" class="street-summary">
+          <h2>Resumo de Ocorrências por Rua</h2>
+          <div id="streetSummaryGrid" class="street-summary-grid">
+            </div>
+        </div>
+
+        <div id="loading" class="loading">
+          <div class="loading-spinner"></div>
+        </div>
+
+        <div id="error" class="error-message" style="display: none;">
+          Falha ao carregar relatórios. Por favor, tente novamente mais tarde.
+        </div>
+
+        <div id="tableContainer" class="table-container" style="display: none;">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Rua</th>
+                <th>Comentário</th>
+                <th>Data de Criação</th>
+                <th>ID do Usuário</th>
+              </tr>
+            </thead>
+            <tbody id="reportsTableBody">
+              </tbody>
+          </table>
+          
+          <div class="table-footer">
+            Exibindo <span id="filteredCount">0</span> de <span id="totalCount">0</span> relatórios
+          </div>
+        </div>
+      </div>
+      
+      <footer>
+        <p>Sistema de Monitoramento de Alagamentos &copy; 2025</p>
+      </footer>
+    </div>
+
+    <script>
+      // Defina o URL base da sua API aqui.
+      // Use o URL público do seu serviço NestJS no Railway.
+      const API_BASE_URL = 'https://alagamap-production.up.railway.app'; // **ATUALIZE ESTE VALOR!**
+
+      // --- Tipos de Dados (para referência, não usados diretamente no JS puro) ---
+      // interface User {
+      //   id: number;
+      // }
+      
+      // interface Report {
+      //   id: number;
+      //   latitude: number;
+      //   longitude: number;
+      //   comment?: string;
+      //   street?: string;
+      //   active: boolean;
+      //   createdAt: string; // ISOString
+      //   user: { id: number }; // A API só retorna o ID do usuário para segurança
+      // }
+
+      // --- Elementos do DOM ---
+      const authSection = document.getElementById('authSection');
+      const adminEmailInput = document.getElementById('adminEmail');
+      const adminPasswordInput = document.getElementById('adminPassword');
+      const loginButton = document.getElementById('loginButton');
+      const loginErrorDiv = document.getElementById('loginError');
+      const dashboardSection = document.getElementById('dashboardSection');
+
+      const streetFilterInput = document.getElementById('streetFilter');
+      const dateFilterInput = document.getElementById('dateFilter');
+      const summaryToggleButton = document.getElementById('summaryToggle');
+      const streetSummaryDiv = document.getElementById('streetSummary');
+      const streetSummaryGrid = document.getElementById('streetSummaryGrid');
+      const loadingDiv = document.getElementById('loading');
+      const errorDiv = document.getElementById('error');
+      const tableContainer = document.getElementById('tableContainer');
+      const reportsTableBody = document.getElementById('reportsTableBody');
+      const filteredCountSpan = document.getElementById('filteredCount');
+      const totalCountSpan = document.getElementById('totalCount');
+      
+      // --- Variáveis globais ---
+      let allReports = [];
+      // Não precisamos do token JWT aqui, pois /reports é público,
+      // mas mantemos a seção de login para o painel de ADMIN.
+      // let jwtToken = localStorage.getItem('adminJwtToken'); // Removido por enquanto
+      
+      // --- Inicializar a aplicação ---
+      document.addEventListener('DOMContentLoaded', () => {
+        // Como /reports é público, podemos buscar os relatórios imediatamente.
+        // O login é apenas para "acessar o painel administrativo" (UI),
+        // mas a exibição dos dados é independente do login se a rota é pública.
+        showDashboard(); // Mostra o dashboard diretamente
+        fetchReports(); // Busca os relatórios
+
+        setupEventListeners();
+      });
+      
+      // --- Funções de UI ---
+      function showLoading() {
+        loadingDiv.style.display = 'flex';
+        errorDiv.style.display = 'none';
+        tableContainer.style.display = 'none';
+      }
+
+      function hideLoading() {
+        loadingDiv.style.display = 'none';
+      }
+      
+      function showError(message = "Falha ao carregar relatórios. Por favor, tente novamente mais tarde.") {
+        hideLoading();
+        errorDiv.textContent = message;
+        errorDiv.style.display = 'block';
+        tableContainer.style.display = 'none'; // Esconde a tabela em caso de erro
+      }
+      
+      function showTable() {
+        tableContainer.style.display = 'block';
+      }
+
+      // showLogin e showDashboard ainda são úteis se o login é apenas para mudar a interface do ADMIN.
+      function showLogin() {
+        authSection.style.display = 'block';
+        dashboardSection.style.display = 'none';
+      }
+
+      function showDashboard() {
+        authSection.style.display = 'none';
+        dashboardSection.style.display = 'block';
+      }
+
+      function showLoginError(message = "Email ou senha inválidos.") {
+        loginErrorDiv.textContent = message;
+        loginErrorDiv.style.display = 'block';
+      }
+
+      function hideLoginError() {
+        loginErrorDiv.style.display = 'none';
+      }
+      
+      // --- Funções de Autenticação (ainda para login administrativo da UI, se desejar) ---
+      // Se o login é apenas para acessar a UI de admin (e não para a API de reports),
+      // você pode ter uma flag ou salvar o token apenas para ações futuras
+      // que *exigiriam* autenticação (como deletar/editar reports, se existirem).
+      // Por enquanto, mantenho a lógica de login, mas a fetchReports não a usa.
+      async function handleLogin() {
+        hideLoginError();
+        const email = adminEmailInput.value;
+        const password = adminPasswordInput.value;
+
+        // Esta parte ainda precisa do token se você fosse usar o token para
+        // outras rotas (ex: criar, atualizar, deletar reports).
+        // Se este é *apenas* um dashboard de visualização pública,
+        // o login pode ser uma formalidade ou para funcionalidades futuras.
+        try {
+          const response = await fetch(`${API_BASE_URL}/auth/login`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ email, password }),
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || 'Erro no login');
+          }
+
+          const data = await response.json();
+          // Aqui, você salvaria o token se fosse usá-lo para outras rotas.
+          // jwtToken = data.access_token;
+          // localStorage.setItem('adminJwtToken', jwtToken); 
+          
+          showDashboard();
+          // Não precisa chamar fetchReports aqui novamente, pois já é chamada no DOMContentLoaded.
+        } catch (err) {
+          console.error("Erro no login:", err);
+          showLoginError(err.message || "Email ou senha inválidos.");
+        }
+      }
+
+
+      // --- Buscar relatórios da API ---
+      async function fetchReports() {
+        showLoading();
+        try {
+          // Se a rota GET /reports é pública, não precisa de cabeçalho Authorization.
+          const response = await fetch(`${API_BASE_URL}/reports`, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          });
+          
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || 'Falha ao buscar relatórios da API.');
+          }
+          
+          allReports = await response.json();
+          applyFilters(); // Aplica os filtros iniciais após carregar todos os dados
+          
+        } catch (err) {
+          console.error("Falha ao buscar relatórios:", err);
+          showError(err.message || "Falha ao carregar relatórios. Verifique a URL da API ou sua conexão.");
+        }
+      }
+      
+      // --- Configurar listeners de eventos ---
+      function setupEventListeners() {
+        loginButton.addEventListener('click', handleLogin); // O login ainda existe para acesso administrativo da UI
+        streetFilterInput.addEventListener('input', applyFilters);
+        dateFilterInput.addEventListener('change', applyFilters);
+        
+        summaryToggleButton.addEventListener('click', () => {
+          const isActive = streetSummaryDiv.classList.toggle('active');
+          
+          if (isActive) {
+            summaryToggleButton.textContent = 'Ocultar Resumo de Ruas';
+            summaryToggleButton.classList.add('active');
+            updateStreetSummary();
+          } else {
+            summaryToggleButton.textContent = 'Mostrar Resumo de Ruas';
+            summaryToggleButton.classList.remove('active');
+          }
+        });
+      }
+      
+      // --- Aplicar filtros aos relatórios (agora no frontend, mas idealmente no backend) ---
+      function applyFilters() {
+        const streetFilter = streetFilterInput.value.toLowerCase();
+        const dateFilter = dateFilterInput.value;
+        
+        filteredReports = allReports.filter(report => {
+          let matchesStreet = true;
+          let matchesDate = true;
+          
+          // Filtrar por nome da rua
+          if (streetFilter) {
+            matchesStreet = report.street && report.street.toLowerCase().includes(streetFilter);
+          }
+          
+          // Filtrar por data
+          if (dateFilter) {
+            const reportDate = new Date(report.createdAt);
+            const filterDate = new Date(dateFilter);
+            
+            // Compara apenas ano, mês e dia
+            matchesDate = (
+              reportDate.getFullYear() === filterDate.getFullYear() &&
+              reportDate.getMonth() === filterDate.getMonth() &&
+              reportDate.getDate() === filterDate.getDate()
+            );
+          }
+          
+          return matchesStreet && matchesDate;
+        });
+        
+        updateTableUI();
+        if (streetSummaryDiv.classList.contains('active')) {
+          updateStreetSummary();
+        }
+      }
+      
+      // --- Atualizar a tabela na interface ---
+      function updateTableUI() {
+        reportsTableBody.innerHTML = ''; // Limpa a tabela antes de preencher
+
+        if (filteredReports.length === 0) {
+          reportsTableBody.innerHTML = `
+            <tr>
+              <td colspan="5" class="empty-message">
+                Nenhum relatório encontrado com os filtros atuais.
+              </td>
+            </tr>
+          `;
+        } else {
+          filteredReports.forEach(report => {
+            const row = reportsTableBody.insertRow();
+            row.insertCell().textContent = report.id;
+            row.insertCell().textContent = report.street || '-';
+            row.insertCell().textContent = report.comment || '-';
+            row.insertCell().textContent = formatDate(report.createdAt);
+            row.insertCell().textContent = report.user ? report.user.id : '-';
+          });
+        }
+        
+        updateCounters();
+        showTable();
+      }
+      
+      // --- Atualizar os contadores de relatórios ---
+      function updateCounters() {
+        filteredCountSpan.textContent = filteredReports.length;
+        totalCountSpan.textContent = allReports.length;
+      }
+      
+      // --- Atualizar o resumo de ruas ---
+      function updateStreetSummary() {
+        const streetCounts = getStreetCounts();
+        
+        streetSummaryGrid.innerHTML = streetCounts.map(item => `
+          <div class="street-summary-item">
+            <div class="street-name">${item.street}</div>
+            <div class="count">${item.count} ocorrência${item.count !== 1 ? 's' : ''}</div>
+          </div>
+        `).join('');
+      }
+      
+      // --- Calcular contagens de ruas ---
+      function getStreetCounts() {
+        const streetMap = {};
+        
+        // Use filteredReports para o resumo, para que ele reflita os filtros aplicados
+        filteredReports.forEach(report => {
+          if (report.street) {
+            streetMap[report.street] = (streetMap[report.street] || 0) + 1;
+          }
+        });
+        
+        return Object.entries(streetMap)
+          .map(([street, count]) => ({ street, count }))
+          .sort((a, b) => b.count - a.count);
+      }
+      
+      // --- Formatar data como dd/mm/yyyy hh:mm ---
+      function formatDate(dateString) {
+        try {
+          const date = new Date(dateString);
+          
+          const day = date.getDate().toString().padStart(2, '0');
+          const month = (date.getMonth() + 1).toString().padStart(2, '0');
+          const year = date.getFullYear();
+          const hours = date.getHours().toString().padStart(2, '0');
+          const minutes = date.getMinutes().toString().padStart(2, '0');
+          
+          return `${day}/${month}/${year} ${hours}:${minutes}`;
+        } catch (error) {
+          return 'Data inválida';
+        }
+      }
+    </script>
+    
+    <script src="https://cdn.gpteng.co/gptengineer.js" type="module"></script>
+  </body>
+</html>
